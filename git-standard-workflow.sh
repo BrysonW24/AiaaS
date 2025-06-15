@@ -1,3 +1,25 @@
+In a typical GitFlow model, there are two main approaches:
+    Create testing branches from develop (which is what the commands show)
+    Have a dedicated testing branch that receives merges from develop
+
+    The current workflow in your file shows testing branches being created from develop, but the comment incorrectly says "from testing". 
+    This should be corrected to "from develop" to match the actual commands.
+
+For a more structured approach, you could consider:
+    1) main (production)
+    2) testing (pre-production/QA)
+    3) develop (integration)
+    4) feature branches (individual development)
+
+A more standard GitFlow approach would be:
+    1) Feature branches → develop (integration of new features)
+    2) Develop → testing/QA branch (for testing before release)
+    3) Testing/QA → main (production-ready code)
+
+This would mean feature branches merge to develop, develop merges to testing for QA, and testing merges to main for production releases.
+
+---
+
 Standard Git Workflow
 
 Initial Setup (One-time)
@@ -11,7 +33,10 @@ Initial Setup (One-time)
     git checkout -b main
     git push -u origin main
 
-    git checkout -b develop main
+    git checkout -b testing main
+    git push -u origin testing
+    
+    git checkout -b develop testing
     git push -u origin develop
 
 # 3 Checking status
@@ -19,13 +44,12 @@ Initial Setup (One-time)
     dir
     git pull
 
-
 ---
 
 Feature Development Workflow
     # 1. Create feature branch from develop
-        git checkout develop
-        git pull origin develop
+        git checkout development
+        git pull origin development
         git checkout -b feature/my-feature
 
     # 2. Create files/folders
@@ -38,6 +62,7 @@ Feature Development Workflow
     # 4. Check status and stage changes
         git status
         git add new-folder/
+        git add . # (all files)
 
     # 5. Commit changes
         git commit -m "Add new feature files"
@@ -60,35 +85,42 @@ Feature Development Workflow
 
 ---
 
-Testing Workflow
-    # 1. Create testing branch from develop
-        git checkout develop
-        git pull origin develop
-        git checkout -b testing/my-feature
+Testing/QA Workflow
+    # 1. Merge develop into testing branch
+        git checkout testing
+        git pull origin testing
+        git merge develop
+        git push origin testing
 
     # 2. Run tests and make fixes
-    # (Make necessary changes to fix issues)
+    # (If issues are found, create fix branches from testing)
+        git checkout testing
+        git checkout -b fix/test-issue
 
     # 3. Commit test fixes
         git add .
         git commit -m "Fix test issues"
 
-    # 4. Push testing branch
-        git push -u origin testing/my-feature
+    # 4. Push fix branch
+        git push -u origin fix/test-issue
 
-    # 5. After testing is complete, merge to develop
+    # 5. After review, merge fix to testing
+        git checkout testing
+        git merge fix/test-issue
+        git push origin testing
+
+    # 6. Merge testing back to develop to keep it updated
         git checkout develop
-        git merge testing/my-feature
+        git merge testing
         git push origin develop
 
 ---
 
 Release Workflow
-    # 1. Create release branch from develop
-        git checkout develop
-        git pull origin develop
+    # 1. When testing is complete, create release branch from testing
+        git checkout testing
+        git pull origin testing
         git checkout -b release/v1.0.0
-
 
     # 2. Make final adjustments and version bumps
     # (Update version numbers, etc.)
@@ -105,9 +137,13 @@ Release Workflow
         git push origin main
         git push origin --tags
 
-    # 5. Merge back to develop
-        git checkout develop
+    # 5. Merge back to testing and develop
+        git checkout testing
         git merge release/v1.0.0
+        git push origin testing
+        
+        git checkout develop
+        git merge testing
         git push origin develop
 
     # 6. Delete release branch
@@ -136,9 +172,13 @@ Hotfix Workflow
         git push origin main
         git push origin --tags
 
-    # 5. Merge to develop
-        git checkout develop
+    # 5. Merge to testing and develop
+        git checkout testing
         git merge hotfix/critical-fix
+        git push origin testing
+        
+        git checkout develop
+        git merge testing
         git push origin develop
 
     # 6. Delete hotfix branch
